@@ -1,0 +1,42 @@
+name: Sync Arbox API spec
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Fetch spec and regenerate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bun run spec:fetch
+      - name: Regenerate the client
+        id: generate
+        continue-on-error: true
+        run: bun run generate
+      - uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
+        with:
+          branch: chore/sync-arbox-spec
+          delete-branch: true
+          title: "feat: sync with the latest Arbox API spec"
+          commit-message: "feat: sync with the latest Arbox API spec"
+          body: |
+            Arbox's published OpenAPI document changed. This updates `openapi/arbox.json` and the generated client.
+
+            Generation: **${{ steps.generate.outcome }}**. If it failed, Arbox added operations that need a method name in `scripts/names.ts`; the job log lists them.
+
+            Review the spec diff for renamed or removed fields: those are breaking changes and need a `feat!:` title. Pull requests opened by this workflow don't trigger CI; push a commit or close and reopen the PR to run it.
