@@ -53,13 +53,13 @@ Every merge to `main` runs [semantic-release](https://semantic-release.gitbook.i
 
 ### First release (one time)
 
-npm trusted publishing can only be configured for a package that already exists, so the first version is published by hand:
+npm trusted publishing can only be configured for a package that already exists, so the first version is published by hand. npm requires two-factor authentication on the publishing account, and provenance can only be generated in CI, so this one publish turns it off:
 
 ```sh
 npm login
 npm version 0.1.0 --no-git-tag-version
 bun run build
-npm publish --access public
+npm publish --access public --provenance=false
 git checkout package.json
 git tag v0.1.0 && git push origin v0.1.0
 ```
